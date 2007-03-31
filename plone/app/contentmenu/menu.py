@@ -689,6 +689,10 @@ class WorkflowMenu(BrowserMenu):
         if workflowActions is None:
             return []
 
+        locking_info = getMultiAdapter((context, request), name='plone_lock_info')
+        if locking_info and locking_info.is_locked_for_current_user():
+                return []
+
         for a in workflowActions:
             action = IActionInfo(a)
             actionUrl = action['url']
