@@ -69,8 +69,7 @@ class ActionsSubMenuItem(BrowserSubMenuItem):
 
     @memoize
     def available(self):
-        actions_tool = self.getToolByName('portal_actions')
-        editActions = actions_tool.listActionInfos(object=aq_inner(self.context), categories=('object_buttons',), max=1)
+        editActions = self.context_state.actions('object_buttons', max=1)
         return len(editActions) > 0
 
     def selected(self):
@@ -85,10 +84,9 @@ class ActionsMenu(BrowserMenu):
         results = []
 
         portal_state = getMultiAdapter((context, request), name='plone_portal_state')
+        context_state = getMultiAdapter((context, request), name='plone_context_state')
 
-        actions_tool = getToolByName(aq_inner(context), 'portal_actions')
-        editActions = actions_tool.listActionInfos(object=aq_inner(context), categories=('object_buttons',))
-
+        editActions = context_state.actions('object_buttons')
         if not editActions:
             return []
 
@@ -96,20 +94,15 @@ class ActionsMenu(BrowserMenu):
         portal_url = portal_state.portal_url()
 
         for action in editActions:
-            if action['allowed']:
-                cssClass = 'actionicon-object_buttons-%s' % action['id']
-                icon = plone_utils.getIconFor('object_buttons', action['id'], None)
-                if icon:
-                    icon = '%s/%s' % (portal_url, icon)
-
-                results.append({ 'title'       : action['title'],
-                                 'description' : '',
-                                 'action'      : action['url'],
-                                 'selected'    : False,
-                                 'icon'        : icon,
-                                 'extra'       : {'id': action['id'], 'separator': None, 'class': cssClass},
-                                 'submenu'     : None,
-                                 })
+            cssClass = 'actionicon-object_buttons-%s' % action['id']
+            results.append({ 'title'       : action['title'],
+                             'description' : '',
+                             'action'      : action['url'],
+                             'selected'    : False,
+                             'icon'        : action['icon'],
+                             'extra'       : {'id': action['id'], 'separator': None, 'class': cssClass},
+                             'submenu'     : None,
+                             })
 
         return results
 

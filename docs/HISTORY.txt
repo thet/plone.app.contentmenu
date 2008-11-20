@@ -4,6 +4,8 @@ Changelog
 2.0 (unreleased)
 ----------------
 
+- Make use of new plone.app.layout context state view API for getting actions.
+  [hannosch]
 
 1.1.7 (unreleased)
 ------------------
