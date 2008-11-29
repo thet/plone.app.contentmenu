@@ -4,6 +4,10 @@ Changelog
 2.0 (unreleased)
 ----------------
 
+- Replaced direct invocations of interfaces with queryAdapter calls.
+  The former does a suboptimal getattr call internally.
+  [hannosch]
+
 - Make use of new plone.app.layout context state view API for getting actions.
   [hannosch]
 

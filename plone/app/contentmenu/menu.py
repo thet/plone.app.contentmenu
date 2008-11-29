@@ -2,7 +2,9 @@ from urllib import quote_plus
 from cgi import escape
 
 from zope.interface import implements
-from zope.component import getMultiAdapter, queryMultiAdapter
+from zope.component import getMultiAdapter
+from zope.component import queryAdapter
+from zope.component import queryMultiAdapter
 from zope.app.component.hooks import getSite
 
 from zope.i18n import translate
@@ -13,7 +15,9 @@ from zope.app.publisher.browser.menu import BrowserSubMenuItem
 
 from plone.memoize.instance import memoize
 
-from Acquisition import aq_inner, aq_base
+from Acquisition import aq_base
+from Acquisition import aq_inner
+from Acquisition import aq_parent
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFDynamicViewFTI.interface import ISelectableBrowserDefault
@@ -32,7 +36,6 @@ from interfaces import IDisplayMenu
 from interfaces import IFactoriesMenu
 from interfaces import IWorkflowMenu
 
-from Products.CMFPlone import utils
 from Products.CMFPlone import PloneMessageFactory as _
 
 from plone.app.content.browser.folderfactories import _allowedTypes
@@ -62,9 +65,9 @@ class ActionsSubMenuItem(BrowserSubMenuItem):
 
     @property
     def action(self):
-        folder = self.context
+        folder = aq_inner(self.context)
         if not self.context_state.is_structural_folder():
-            folder = utils.parent(self.context)
+            folder = aq_parent(self.context)
         return folder.absolute_url() + '/folder_contents'
 
     @memoize
@@ -155,9 +158,16 @@ class DisplaySubMenuItem(BrowserSubMenuItem):
 
         # If this is a default page, also get menu items relative to the parent
         if isDefaultPage:
-            folder = ISelectableBrowserDefault(utils.parent(self.context), None)
+            parent = aq_parent(aq_inner(self.context))
+            if ISelectableBrowserDefault.providedBy(parent):
+                folder = parent
+            else:
+                folder = queryAdapter(parent, ISelectableBrowserDefault)
 
-        context = ISelectableBrowserDefault(self.context, None)
+        if ISelectableBrowserDefault.providedBy(self.context):
+            context = aq_inner(self.context)
+        else:
+            context = queryAdapter(self.context, ISelectableBrowserDefault)
 
         folderLayouts = []
         folderCanSetLayout = False
@@ -192,9 +202,9 @@ class DisplaySubMenuItem(BrowserSubMenuItem):
 
     @memoize
     def disabled(self):
-        context = self.context
+        context = aq_inner(self.context)
         if self.context_state.is_default_page():
-            context = utils.parent(context)
+            context = aq_parent(context)
         if not getattr(context, 'isPrincipiaFolderish', False):
             return False
         elif 'index_html' not in context.objectIds():
@@ -223,10 +233,16 @@ class DisplayMenu(BrowserMenu):
 
         # If this is a default page, also get menu items relative to the parent
         if isDefaultPage:
-            parent = utils.parent(obj)
-            folder = ISelectableBrowserDefault(parent, None)
+            parent = aq_parent(aq_inner(obj))
+            if ISelectableBrowserDefault.providedBy(parent):
+                folder = parent
+            else:
+                folder = queryAdapter(parent, ISelectableBrowserDefault)
 
-        context = ISelectableBrowserDefault(obj, None)
+        if ISelectableBrowserDefault.providedBy(obj):
+            context = obj
+        else:
+            context = queryAdapter(obj, ISelectableBrowserDefault)
 
         folderLayouts = []
         folderCanSetLayout = False
@@ -474,7 +490,10 @@ class FactoriesSubMenuItem(BrowserSubMenuItem):
 
     def _addableTypesInContext(self, addContext):
         allowed_types = _allowedTypes(self.request, addContext)
-        constrain = IConstrainTypes(addContext, None)
+        if IConstrainTypes.providedBy(addContext):
+            constrain = addContext
+        else:
+            constrain = queryAdapter(addContext, IConstrainTypes)
         if constrain is None:
             return allowed_types
         else:
@@ -488,7 +507,10 @@ class FactoriesSubMenuItem(BrowserSubMenuItem):
     @memoize
     def _showConstrainOptions(self):
         addContext = self._addContext()
-        constrain = ISelectableConstrainTypes(addContext, None)
+        if ISelectableConstrainTypes.providedBy(addContext):
+            constrain = addContext
+        else:
+            constrain = queryAdapter(addContext, ISelectableConstrainTypes)
         if constrain is None:
             return False
         elif constrain.canSetConstrainTypes() and constrain.getDefaultAddableTypes():
@@ -516,7 +538,11 @@ class FactoriesMenu(BrowserMenu):
         addContext = factories_view.add_context()
         allowedTypes = _allowedTypes(request, addContext)
 
-        constraints = IConstrainTypes(addContext, None)
+        if IConstrainTypes.providedBy(addContext):
+            constraints = addContext
+        else:
+            constraints = queryAdapter(addContext, IConstrainTypes)
+
         if constraints is not None:
             include = constraints.getImmediatelyAddableTypes()
             if len(include) < len(allowedTypes):
@@ -535,7 +561,11 @@ class FactoriesMenu(BrowserMenu):
                              'submenu'     : None,
                             })
 
-        constraints = ISelectableConstrainTypes(addContext, None)
+        if ISelectableConstrainTypes.providedBy(addContext):
+            constraints = addContext
+        else:
+            constraints = queryAdapter(addContext, ISelectableConstrainTypes)
+
         if constraints is not None:
             if constraints.canSetConstrainTypes() and constraints.getDefaultAddableTypes():
                 url = '%s/folder_constraintypes_form' % (addContext.absolute_url(),)
