@@ -67,7 +67,7 @@ class ActionsSubMenuItem(BrowserSubMenuItem):
     def action(self):
         folder = aq_inner(self.context)
         if not self.context_state.is_structural_folder():
-            folder = aq_parent(self.context)
+            folder = aq_parent(folder)
         return folder.absolute_url() + '/folder_contents'
 
     @memoize
