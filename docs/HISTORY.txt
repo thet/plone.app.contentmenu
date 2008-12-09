@@ -4,6 +4,10 @@ Changelog
 2.0 (unreleased)
 ----------------
 
+- Removed `testfixture` extension profile from test setup, which had side
+  effects on all other tests.
+  [hannosch]
+
 - Replaced direct invocations of interfaces with queryAdapter calls.
   The former does a suboptimal getattr call internally.
   [hannosch]

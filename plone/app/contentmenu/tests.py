@@ -1,7 +1,7 @@
 import unittest
 
 from Products.PloneTestCase import PloneTestCase as ptc
-ptc.setupPloneSite(extension_profiles=['Products.CMFPlone:testfixture'])
+ptc.setupPloneSite()
 
 from zope.interface import directlyProvides
 from zope.component import getUtility
@@ -282,8 +282,14 @@ class TestFactoriesMenu(ptc.PloneTestCase):
 class TestWorkflowMenu(ptc.PloneTestCase):
 
     def afterSetUp(self):
-        self.folder.invokeFactory('Document', 'doc1')
-        self.menu = getUtility(IBrowserMenu, name='plone_contentmenu_workflow', context=self.folder)
+        self.loginAsPortalOwner()
+        self.portal.invokeFactory('Folder', 'folder1')
+        self.folder1 = self.portal.folder1
+        wf_tool = getToolByName(self.portal, "portal_workflow")
+        wf_tool.doActionFor(self.folder1, 'publish')
+        self.folder1.invokeFactory('Document', 'doc1')
+        wf_tool.doActionFor(self.folder1.doc1, 'publish')
+        self.menu = getUtility(IBrowserMenu, name='plone_contentmenu_workflow', context=self.folder1)
         self.request = self.app.REQUEST
 
     def testMenuImplementsIBrowserMenu(self):
@@ -293,50 +299,50 @@ class TestWorkflowMenu(ptc.PloneTestCase):
         self.failUnless(IWorkflowMenu.providedBy(self.menu))
 
     def testMenuIncludesActions(self):
-        actions = self.menu.getMenuItems(self.folder.doc1, self.request)
-        self.failUnless('workflow-transition-submit' in
+        actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
+        self.failUnless('workflow-transition-reject' in
                         [a['extra']['id'] for a in actions])
-        self.failUnless('http://nohost/plone/Members/test_user_1_/doc1/content_status_modify?workflow_action=submit' in
+        self.failUnless('http://nohost/plone/folder1/doc1/content_status_modify?workflow_action=reject' in
                         [a['action'] for a in actions])
 
         # Let us try that again but with an empty url action, like is
         # usual in older workflows, and which is nice to keep
         # supporting.
-        context = self.folder.doc1
+        context = self.folder1.doc1
         wf_tool = getToolByName(context, "portal_workflow")
-        submit = wf_tool.plone_workflow.transitions['submit']
-        submit.actbox_url = ""
-        actions = self.menu.getMenuItems(self.folder.doc1, self.request)
-        self.failUnless('workflow-transition-submit' in
+        reject = wf_tool.plone_workflow.transitions['reject']
+        reject.actbox_url = ""
+        actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
+        self.failUnless('workflow-transition-reject' in
                         [a['extra']['id'] for a in actions])
-        self.failUnless('http://nohost/plone/Members/test_user_1_/doc1/content_status_modify?workflow_action=submit' in
+        self.failUnless('http://nohost/plone/folder1/doc1/content_status_modify?workflow_action=reject' in
                         [a['action'] for a in actions])
 
     def testNoTransitions(self):
         self.logout()
-        actions = self.menu.getMenuItems(self.folder.doc1, self.request)
+        actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
         self.assertEqual(len(actions), 0)
 
     def testLockedItem(self):
-        membership_tool = getToolByName(self.folder, 'portal_membership')
+        membership_tool = getToolByName(self.folder1, 'portal_membership')
         membership_tool.addMember('anotherMember', 'secret', ['Member'], [])
-        locking = ILockable(self.folder.doc1)
+        locking = ILockable(self.folder1.doc1)
         locking.lock()
         self.login('anotherMember')
-        actions = self.menu.getMenuItems(self.folder.doc1, self.request)
+        actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
         self.assertEqual(len(actions), 0)
 
     def testAdvancedIncluded(self):
-        actions = self.menu.getMenuItems(self.folder.doc1, self.request)
-        url = self.folder.doc1.absolute_url() + '/content_status_history'
+        actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
+        url = self.folder1.doc1.absolute_url() + '/content_status_history'
         self.failUnless(url in [a['action'] for a in actions])
 
     def testPolicyIncludedIfCMFPWIsInstalled(self):
-        actions = self.menu.getMenuItems(self.folder.doc1, self.request)
-        url = self.folder.doc1.absolute_url() + '/placeful_workflow_configuration'
+        actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
+        url = self.folder1.doc1.absolute_url() + '/placeful_workflow_configuration'
         self.failIf(url in [a['action'] for a in actions])
         self.portal.portal_quickinstaller.installProduct('CMFPlacefulWorkflow')
-        actions = self.menu.getMenuItems(self.folder.doc1, self.request)
+        actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
         self.failUnless(url in [a['action'] for a in actions])
 
 
@@ -417,8 +423,12 @@ class TestContentMenu(ptc.PloneTestCase):
         self.assertEqual(factoriesMenuItem['extra']['hideChildren'], False)
 
     def testAddMenuNotIncludedIfNothingToAdd(self):
+        self.loginAsPortalOwner()
+        self.portal.invokeFactory('Folder', 'folder1')
+        wf_tool = getToolByName(self.portal, 'portal_workflow')
+        wf_tool.doActionFor(self.portal.folder1, 'publish')
         self.logout()
-        items = self.menu.getMenuItems(self.folder, self.request)
+        items = self.menu.getMenuItems(self.portal.folder1, self.request)
         self.assertEqual([i for i in items if i['extra']['id'] == 'plone-contentmenu-factories'], [])
 
     def testAddMenuWithNothingToAddButWithAvailableConstrainSettings(self):
@@ -468,8 +478,12 @@ class TestContentMenu(ptc.PloneTestCase):
         self.failUnless(len(workflowMenuItem['submenu']) > 0)
 
     def testWorkflowMenuWithNoTransitionsDisabled(self):
+        self.loginAsPortalOwner()
+        self.portal.invokeFactory('Folder', 'folder1')
+        wf_tool = getToolByName(self.portal, 'portal_workflow')
+        wf_tool.doActionFor(self.portal.folder1, 'publish')
         self.logout()
-        items = self.menu.getMenuItems(self.folder, self.request)
+        items = self.menu.getMenuItems(self.portal.folder1, self.request)
         workflowMenuItem = [i for i in items if i['extra']['id'] == 'plone-contentmenu-workflow'][0]
         self.assertEqual(workflowMenuItem['action'], '')
 
