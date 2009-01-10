@@ -4,6 +4,9 @@ Changelog
 2.0 (unreleased)
 ----------------
 
+- Specified package dependencies.
+  [hannosch]
+
 - Removed `testfixture` extension profile from test setup, which had side
   effects on all other tests.
   [hannosch]
