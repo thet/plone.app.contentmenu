@@ -1,16 +1,11 @@
-from zope.interface import Interface
-from zope.interface import implements
-
 from zope.component import getUtility
-from zope.component import adapts
-
+from zope.interface import implements
 from zope.app.publisher.interfaces.browser import IBrowserMenu
 
-from interfaces import IContentMenuView
-
 from Acquisition import Explicit
-from Products.CMFPlone import utils
 from Products.Five.browser.pagetemplatefile import ZopeTwoPageTemplateFile
+
+from interfaces import IContentMenuView
 
 
 class ContentMenuProvider(Explicit):
