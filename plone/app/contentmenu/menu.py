@@ -36,9 +36,9 @@ from interfaces import IDisplayMenu
 from interfaces import IFactoriesMenu
 from interfaces import IWorkflowMenu
 
-from Products.CMFPlone import PloneMessageFactory as _
-
 from plone.app.content.browser.folderfactories import _allowedTypes
+
+from plone.app.contentmenu import PloneMessageFactory as _
 
 def _safe_unicode(text):
     if not isinstance(text, unicode):
