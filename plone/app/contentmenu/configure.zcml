@@ -3,11 +3,18 @@
            xmlns:five="http://namespaces.zope.org/five"
            i18n_domain="plone">
 
-  <!-- Top level menu -->
+  <!-- Top level menus -->
+
   <browser:menu
     id="plone_contentmenu"
     title="Content menu - contains contextual actions related to the content"
     interface=".interfaces.IContentMenuItem"
+    />
+
+  <browser:menu
+    id="plone_contenteditmenu"
+    title="Content edit menu - contains contextual actions related to editing the content"
+    interface=".interfaces.IContentEditMenuItem"
     />
 
   <!-- Sub-menus -->
@@ -67,21 +74,21 @@
            provides=".interfaces.IContentMenuItem" />
 
   <adapter for="* *"
-           name="plone.contentmenu.display"
-           factory=".menu.DisplaySubMenuItem"
-           provides=".interfaces.IContentMenuItem" />
-
-  <adapter for="* *"
            name="plone.contentmenu.factories"
            factory=".menu.FactoriesSubMenuItem"
            provides=".interfaces.IContentMenuItem" />
 
   <adapter for="* *"
+           name="plone.contentmenu.display"
+           factory=".menu.DisplaySubMenuItem"
+           provides=".interfaces.IContentEditMenuItem" />
+
+  <adapter for="* *"
            name="plone.contentmenu.workflow"
            factory=".menu.WorkflowSubMenuItem"
-           provides=".interfaces.IContentMenuItem" />
+           provides=".interfaces.IContentEditMenuItem" />
 
-  <!-- A content provider showing the menu -->
+  <!-- Content providers showing the menus -->
 
   <adapter
       for="*
@@ -89,6 +96,15 @@
            *"
       factory=".view.ContentMenuProvider"
       name="plone.contentmenu"
+      provides="zope.contentprovider.interfaces.IContentProvider"
+      />
+
+  <adapter
+      for="*
+           zope.publisher.interfaces.browser.IDefaultBrowserLayer
+           *"
+      factory=".view.ContentEditMenuProvider"
+      name="plone.contenteditmenu"
       provides="zope.contentprovider.interfaces.IContentProvider"
       />
 

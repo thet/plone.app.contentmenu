@@ -36,6 +36,11 @@ class IContentMenuItem(Interface):
 
 directlyProvides(IContentMenuItem, IMenuItemType)
 
+class IContentEditMenuItem(Interface):
+    """Special menu item type for Plone's content edit menu."""
+
+directlyProvides(IContentEditMenuItem, IMenuItemType)
+
 # The sub-menus - because they require additional logic, each of these will be
 # implemented with a separate class. We provide markers here to distinguish
 # them, although IBrowserMenu is the primary interface through which they are

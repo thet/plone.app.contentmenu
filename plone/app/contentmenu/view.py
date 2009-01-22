@@ -37,3 +37,14 @@ class ContentMenuProvider(Explicit):
         items = menu.getMenuItems(self.context, self.request)
         items.reverse()
         return items
+
+
+class ContentEditMenuProvider(ContentMenuProvider):
+    """Content menu provider for the "edit" tab: displays the menu
+    """
+
+    def menu(self):
+        menu = getUtility(IBrowserMenu, name='plone_contenteditmenu')
+        items = menu.getMenuItems(self.context, self.request)
+        items.reverse()
+        return items
