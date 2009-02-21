@@ -4,6 +4,9 @@ Changelog
 2.0 (unreleased)
 ----------------
 
+- Removed dependency on quick installer.
+  [hannosch]
+
 - Use our own PloneMessageFactory.
   [hannosch]
 

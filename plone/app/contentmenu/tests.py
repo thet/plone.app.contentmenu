@@ -341,7 +341,8 @@ class TestWorkflowMenu(ptc.PloneTestCase):
         actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
         url = self.folder1.doc1.absolute_url() + '/placeful_workflow_configuration'
         self.failIf(url in [a['action'] for a in actions])
-        self.portal.portal_quickinstaller.installProduct('CMFPlacefulWorkflow')
+        self.portal.portal_setup.runAllImportStepsFromProfile(
+            'profile-Products.CMFPlacefulWorkflow:CMFPlacefulWorkflow')
         actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
         self.failUnless(url in [a['action'] for a in actions])
 
