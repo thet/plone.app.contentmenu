@@ -4,6 +4,9 @@ Changelog
 2.0 (unreleased)
 ----------------
 
+- Avoid all but test dependencies on CMFPlone.
+  [hannosch]
+
 - Removed dependency on quick installer.
   [hannosch]
 

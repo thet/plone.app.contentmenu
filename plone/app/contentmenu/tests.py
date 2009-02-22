@@ -12,8 +12,8 @@ from zope.app.testing.placelesssetup import PlacelessSetup
 from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import getToolByName
 
-from Products.CMFPlone.interfaces import ISelectableConstrainTypes
-from Products.CMFPlone.interfaces import INonStructuralFolder
+from plone.navigation.interfaces.structure import INonStructuralFolder
+from plone.navigation.interfaces.constrains import ISelectableConstrainTypes
 
 from plone.app.contentmenu.interfaces import IActionsMenu
 from plone.app.contentmenu.interfaces import IDisplayMenu

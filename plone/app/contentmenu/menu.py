@@ -14,6 +14,9 @@ from zope.app.publisher.browser.menu import BrowserMenu
 from zope.app.publisher.browser.menu import BrowserSubMenuItem
 
 from plone.memoize.instance import memoize
+from plone.navigation.interfaces.structure import INonStructuralFolder
+from plone.navigation.interfaces.constrains import IConstrainTypes
+from plone.navigation.interfaces.constrains import ISelectableConstrainTypes
 
 from Acquisition import aq_base
 from Acquisition import aq_inner
@@ -21,10 +24,6 @@ from Acquisition import aq_parent
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFDynamicViewFTI.interface import ISelectableBrowserDefault
-
-from Products.CMFPlone.interfaces.structure import INonStructuralFolder
-from Products.CMFPlone.interfaces.constrains import IConstrainTypes
-from Products.CMFPlone.interfaces.constrains import ISelectableConstrainTypes
 
 from interfaces import IActionsSubMenuItem
 from interfaces import IDisplaySubMenuItem
