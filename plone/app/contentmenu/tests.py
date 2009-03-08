@@ -25,6 +25,12 @@ from plone.locking.interfaces import ILockable
 from Products.CMFPlone.utils import _createObjectByType
 from Products.CMFPlone.tests import dummy
 
+HAS_CMFPW = True
+try:
+    import Products.CMFPlacefulWorkflow
+except ImportError:
+    HAS_CMFPW = False
+
 
 class TestActionsMenu(ptc.PloneTestCase):
 
@@ -337,14 +343,15 @@ class TestWorkflowMenu(ptc.PloneTestCase):
         url = self.folder1.doc1.absolute_url() + '/content_status_history'
         self.failUnless(url in [a['action'] for a in actions])
 
-    def testPolicyIncludedIfCMFPWIsInstalled(self):
-        actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
-        url = self.folder1.doc1.absolute_url() + '/placeful_workflow_configuration'
-        self.failIf(url in [a['action'] for a in actions])
-        self.portal.portal_setup.runAllImportStepsFromProfile(
-            'profile-Products.CMFPlacefulWorkflow:CMFPlacefulWorkflow')
-        actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
-        self.failUnless(url in [a['action'] for a in actions])
+    if HAS_CMFPW:
+        def testPolicyIncludedIfCMFPWIsInstalled(self):
+            actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
+            url = self.folder1.doc1.absolute_url() + '/placeful_workflow_configuration'
+            self.failIf(url in [a['action'] for a in actions])
+            self.portal.portal_setup.runAllImportStepsFromProfile(
+                'profile-Products.CMFPlacefulWorkflow:CMFPlacefulWorkflow')
+            actions = self.menu.getMenuItems(self.folder1.doc1, self.request)
+            self.failUnless(url in [a['action'] for a in actions])
 
 
 class TestContentMenu(ptc.PloneTestCase):
@@ -487,26 +494,6 @@ class TestContentMenu(ptc.PloneTestCase):
         items = self.menu.getMenuItems(self.portal.folder1, self.request)
         workflowMenuItem = [i for i in items if i['extra']['id'] == 'plone-contentmenu-workflow'][0]
         self.assertEqual(workflowMenuItem['action'], '')
-
-    # XXX: Unable to write a proper test so far
-    def DISABLED_testWorkflowMenuWithNoTransitionsEnabledAsManager(self):
-        # set workflow guard condition that fails, so there are no transitions.
-        # then show that manager will get a drop-down with settings whilst
-        # regular users won't
-
-        self.portal.portal_workflow.doActionFor(self.folder, 'hide')
-        wf = self.portal.portal_workflow['folder_workflow']
-        wf.transitions['show'].guard.expr = Expression('python: False')
-        wf.transitions['publish'].guard.expr = Expression('python: False')
-
-        items = self.menu.getMenuItems(self.folder, self.request)
-        workflowMenuItem = [i for i in items if i['extra']['id'] == 'plone-contentmenu-workflow'][0]
-
-        # A regular user doesn't see any actions
-        self.failUnless(workflowMenuItem['action'] == '')
-        self.failUnless(workflowMenuItem['submenu'] is None)
-
-        self.fail('Unable to write a proper test so far')
 
     def testWorkflowMenuWithNoWorkflowNotIncluded(self):
         self.portal.portal_workflow.setChainForPortalTypes(('Document',), ())
