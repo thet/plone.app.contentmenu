@@ -4,6 +4,9 @@ Changelog
 2.0 (unreleased)
 ----------------
 
+- Removed icon display.
+  [limi]
+
 - Avoid all but test dependencies on CMFPlone.
   [hannosch]
 
