@@ -4,6 +4,9 @@ Changelog
 2.0 (unreleased)
 ----------------
 
+- Removed dependency on helper method from plone.app.content.
+  [hannosch]
+
 - Removed icon display.
   [limi]
 

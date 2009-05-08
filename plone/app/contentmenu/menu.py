@@ -35,8 +35,6 @@ from interfaces import IDisplayMenu
 from interfaces import IFactoriesMenu
 from interfaces import IWorkflowMenu
 
-from plone.app.content.browser.folderfactories import _allowedTypes
-
 from plone.app.contentmenu import PloneMessageFactory as _
 
 def _safe_unicode(text):
@@ -488,7 +486,7 @@ class FactoriesSubMenuItem(BrowserSubMenuItem):
         return [(context, fti) for fti in self._addableTypesInContext(context)]
 
     def _addableTypesInContext(self, addContext):
-        allowed_types = _allowedTypes(self.request, addContext)
+        allowed_types = addContext.allowedContentTypes()
         if IConstrainTypes.providedBy(addContext):
             constrain = addContext
         else:
@@ -535,7 +533,7 @@ class FactoriesMenu(BrowserMenu):
         include = None
 
         addContext = factories_view.add_context()
-        allowedTypes = _allowedTypes(request, addContext)
+        allowedTypes = addContext.allowedContentTypes()
 
         if IConstrainTypes.providedBy(addContext):
             constraints = addContext
