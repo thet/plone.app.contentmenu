@@ -4,6 +4,9 @@ Changelog
 2.0 (unreleased)
 ----------------
 
+- Use getSite from zope.site instead of zope.app.component.
+  [hannosch]
+
 - Removed dependency on helper method from plone.app.content.
   [hannosch]
 

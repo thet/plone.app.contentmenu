@@ -5,7 +5,7 @@ from zope.interface import implements
 from zope.component import getMultiAdapter
 from zope.component import queryAdapter
 from zope.component import queryMultiAdapter
-from zope.app.component.hooks import getSite
+from zope.site.hooks import getSite
 
 from zope.i18n import translate
 from zope.i18nmessageid.message import Message
