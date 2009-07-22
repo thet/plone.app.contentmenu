@@ -1,5 +1,6 @@
 import unittest
 
+from Testing.ZopeTestCase.placeless import PlacelessSetup
 from Products.PloneTestCase import PloneTestCase as ptc
 ptc.setupPloneSite()
 
@@ -7,9 +8,7 @@ from zope.interface import directlyProvides
 from zope.component import getUtility
 
 from zope.app.publisher.interfaces.browser import IBrowserMenu
-from zope.app.testing.placelesssetup import PlacelessSetup
 
-from Products.CMFCore.Expression import Expression
 from Products.CMFCore.utils import getToolByName
 
 from plone.navigation.interfaces.structure import INonStructuralFolder
@@ -505,6 +504,7 @@ class TestContentMenu(ptc.PloneTestCase):
 class TestDisplayViewsMenu(PlacelessSetup, unittest.TestCase):
 
     def setUp(self):
+        PlacelessSetup.setUp(self)
         from Products.Five import zcml
         import Products.Five
         import plone.app.contentmenu

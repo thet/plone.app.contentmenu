@@ -23,7 +23,6 @@ setup(name='plone.app.contentmenu',
             'plone.locking',
             'zope.publisher',
             'zope.testing',
-            'zope.app.testing',
             'Plone',
             'Products.PloneTestCase',
           ]

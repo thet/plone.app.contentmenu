@@ -4,6 +4,9 @@ Changelog
 2.0 (unreleased)
 ----------------
 
+- Use `Testing.ZopeTestCase.placeless` instead of `zope.app.testing.placeless`.
+  [hannosch]
+
 - Use getSite from zope.site instead of zope.app.component.
   [hannosch]
 
