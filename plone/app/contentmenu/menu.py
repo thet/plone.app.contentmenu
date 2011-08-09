@@ -465,9 +465,9 @@ class FactoriesSubMenuItem(BrowserSubMenuItem):
 class FactoriesMenu(BrowserMenu):
     implements(IFactoriesMenu)
 
-    def getMenuItems(self, context, request):
+    def getMenuItems(self, obj, request):
         """Return menu item entries in a TAL-friendly form."""
-        factories_view = getMultiAdapter((context, request), name='folder_factories')
+        factories_view = getMultiAdapter((obj, request), name='folder_factories')
 
         haveMore = False
         include = None
@@ -593,16 +593,16 @@ class WorkflowMenu(BrowserMenu):
         'content_submit_form',
     )
 
-    def getMenuItems(self, context, request):
+    def getMenuItems(self, obj, request):
         """Return menu item entries in a TAL-friendly form."""
         results = []
 
-        locking_info = queryMultiAdapter((context, request), name='plone_lock_info')
+        locking_info = queryMultiAdapter((obj, request), name='plone_lock_info')
         if locking_info and locking_info.is_locked_for_current_user():
             return []
 
-        wf_tool = getToolByName(context, 'portal_workflow')
-        workflowActions = wf_tool.listActionInfos(object=context)
+        wf_tool = getToolByName(obj, 'portal_workflow')
+        workflowActions = wf_tool.listActionInfos(object=obj)
 
         for action in workflowActions:
             if action['category'] != 'workflow':
@@ -611,7 +611,7 @@ class WorkflowMenu(BrowserMenu):
             cssClass = 'kssIgnore'
             actionUrl = action['url']
             if actionUrl == "":
-                actionUrl = '%s/content_status_modify?workflow_action=%s' % (context.absolute_url(), action['id'])
+                actionUrl = '%s/content_status_modify?workflow_action=%s' % (obj.absolute_url(), action['id'])
                 cssClass = ''
 
             description = ''
@@ -622,8 +622,8 @@ class WorkflowMenu(BrowserMenu):
 
             for bogus in self.BOGUS_WORKFLOW_ACTIONS:
                 if actionUrl.endswith(bogus):
-                    if getattr(context, bogus, None) is None:
-                        actionUrl = '%s/content_status_modify?workflow_action=%s' % (context.absolute_url(), action['id'],)
+                    if getattr(obj, bogus, None) is None:
+                        actionUrl = '%s/content_status_modify?workflow_action=%s' % (obj.absolute_url(), action['id'],)
                         cssClass =''
                     break
 
@@ -637,7 +637,7 @@ class WorkflowMenu(BrowserMenu):
                                  'submenu'     : None,
                                  })
 
-        url = context.absolute_url()
+        url = obj.absolute_url()
 
         if len(results) > 0:
             results.append({ 'title'        : _(u'label_advanced', default=u'Advanced...'),
@@ -649,8 +649,8 @@ class WorkflowMenu(BrowserMenu):
                              'submenu'      : None,
                             })
 
-        if getToolByName(context, 'portal_placeful_workflow', None) is not None:
-            if _checkPermission(ManageWorkflowPolicies, context):
+        if getToolByName(obj, 'portal_placeful_workflow', None) is not None:
+            if _checkPermission(ManageWorkflowPolicies, obj):
                 results.append({'title': _(u'workflow_policy',
                                            default=u'Policy...'),
                                 'description': '',
