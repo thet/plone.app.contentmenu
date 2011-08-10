@@ -1,13 +1,21 @@
 from cgi import escape
+from urllib import quote_plus
 
 from plone.memoize.instance import memoize
-from plone.app.content.browser.folderfactories import _allowedTypes
 from plone.app.content.browser.interfaces import IContentsPage
+from zope.i18n import translate
 from zope.interface import implements
-from zope.component import getMultiAdapter, queryMultiAdapter
+from zope.component import queryUtility
+from zope.component import getMultiAdapter
+from zope.component import queryMultiAdapter
+from plone.i18n.normalizer.interfaces import IIDNormalizer
 
 from Acquisition import aq_base
-from Products.CMFCore.utils import getToolByName, _checkPermission
+from Acquisition import aq_inner
+from Acquisition import aq_parent
+from Products.CMFCore.Expression import createExprContext
+from Products.CMFCore.utils import getToolByName
+from Products.CMFCore.utils import _checkPermission
 from Products.CMFDynamicViewFTI.interface import ISelectableBrowserDefault
 from Products.CMFPlone import utils
 from Products.CMFPlone.interfaces.structure import INonStructuralFolder
@@ -80,18 +88,18 @@ class ActionsSubMenuItem(BrowserSubMenuItem):
 class ActionsMenu(BrowserMenu):
     implements(IActionsMenu)
 
-    def getMenuItems(self, context, request):
+    def getMenuItems(self, obj, request):
         """Return menu item entries in a TAL-friendly form."""
         results = []
 
-        context_state = getMultiAdapter((context, request),
+        context_state = getMultiAdapter((obj, request),
             name='plone_context_state')
         editActions = context_state.actions('object_buttons')
         if not editActions:
             return results
 
-        actionicons = getToolByName(context, 'portal_actionicons')
-        portal_url = getToolByName(context, 'portal_url')()
+        actionicons = getToolByName(obj, 'portal_actionicons')
+        portal_url = getToolByName(obj, 'portal_url')()
 
         for action in editActions:
             if action['allowed']:
@@ -439,7 +447,7 @@ class FactoriesSubMenuItem(BrowserSubMenuItem):
         return [(context, fti) for fti in self._addableTypesInContext(context)]
 
     def _addableTypesInContext(self, addContext):
-        allowed_types = _allowedTypes(self.request, addContext)
+        allowed_types = addContext.allowedContentTypes()
         constrain = IConstrainTypes(addContext, None)
         if constrain is None:
             return allowed_types
@@ -465,47 +473,163 @@ class FactoriesSubMenuItem(BrowserSubMenuItem):
 class FactoriesMenu(BrowserMenu):
     implements(IFactoriesMenu)
 
+    def _addable_types(self, obj, request, include=None):
+        """Return menu item entries in a TAL-friendly form.
+
+        Pass a list of type ids to 'include' to explicitly allow a list of
+        types.
+        """
+        results = []
+
+        idnormalizer = queryUtility(IIDNormalizer)
+        portal_state = getMultiAdapter((obj, request), name='plone_portal_state')
+        portal_url = portal_state.portal_url()
+
+        baseUrl = obj.absolute_url()
+
+        allowedTypes = obj.allowedContentTypes()
+
+        types_tool = getToolByName(obj, 'portal_types')
+
+        # Note: we don't check 'allowed' or 'available' here, because these are
+        # slow. We assume the 'allowedTypes' list has already performed the
+        # necessary calculations
+        actions = types_tool.listActionInfos(
+            object=obj,
+            check_permissions=False,
+            check_condition=False,
+            category='folder/add',
+        )
+        addActionsById = dict([(a['id'], a) for a in actions])
+
+        expr_context = createExprContext(
+            aq_parent(obj), portal_state.portal(), obj)
+        for t in allowedTypes:
+            typeId = t.getId()
+            if include is None or typeId in include:
+                cssId = idnormalizer.normalize(typeId)
+                cssClass = 'contenttype-%s' % cssId
+
+                url = None
+                addAction = addActionsById.get(typeId, None)
+                if addAction is not None:
+                    url = addAction['url']
+
+                if not url:
+                    url = '%s/createObject?type_name=%s' % (baseUrl, quote_plus(typeId),)
+
+                icon = t.getIconExprObject()
+                if icon:
+                    icon = icon(expr_context)
+
+                results.append({ 'id'           : typeId,
+                                 'title'        : t.Title(),
+                                 'description'  : t.Description(),
+                                 'action'       : url,
+                                 'selected'     : False,
+                                 'icon'         : icon,
+                                 'extra'        : {'id' : cssId, 'separator' : None, 'class' : cssClass},
+                                 'submenu'      : None,
+                                })
+
+        # Sort the addable content types based on their translated title
+        results = [(translate(ctype['title'], context=request), ctype) for ctype in results]
+        results.sort()
+        results = [ctype[-1] for ctype in results]
+
+        return results
+
+    def _getMenuItemsForContext(self, context, request):
+        """Return menu item entries for the context only."""
+        results = []
+
+        if context is not None:
+            allowed = []
+            constraints = []
+            haveMore = False
+            include = None
+
+            allowed = context.allowedContentTypes()
+            constraints = IConstrainTypes(context, None)
+
+            if constraints is not None:
+                include = constraints.getImmediatelyAddableTypes()
+                if len(include) < len(allowed):
+                    haveMore = True
+
+            results = self._addable_types(context, request, include)
+
+            if haveMore:
+                url = '%s/folder_factories' % (context.absolute_url(),)
+                results.append({ 'title'       : _(u'folder_add_more', default=u'More\u2026'),
+                                 'description' : _(u'Show all available content types'),
+                                 'action'      : url,
+                                 'selected'    : False,
+                                 'icon'        : None,
+                                 'extra'       : {'id': 'more', 'separator': None, 'class': ''},
+                                 'submenu'     : None,
+                                 })
+
+            selectableConstraints = ISelectableConstrainTypes(context, None)
+            if selectableConstraints is not None:
+                if selectableConstraints.canSetConstrainTypes() and \
+                   selectableConstraints.getDefaultAddableTypes():
+                    url = '%s/folder_constraintypes_form' % (context.absolute_url(),)
+                    results.append({'title'       : _(u'folder_add_settings', default=u'Restrictions\u2026'),
+                                    'description' : _(u'title_configure_addable_content_types', default=u'Configure which content types can be added here'),
+                                    'action'      : url,
+                                    'selected'    : False,
+                                    'icon'        : None,
+                                    'extra'       : {'id': 'settings', 'separator': None, 'class': ''},
+                                    'submenu'     : None,
+                                    })
+
+        return results
+
     def getMenuItems(self, obj, request):
         """Return menu item entries in a TAL-friendly form."""
-        factories_view = getMultiAdapter((obj, request), name='folder_factories')
+        context_state = getMultiAdapter((obj, request), name='plone_context_state')
+        isDefaultPage = context_state.is_default_page()
 
-        haveMore = False
-        include = None
+        parent = None
 
-        addContext = factories_view.add_context()
-        allowedTypes = _allowedTypes(request, addContext)
+        folder = None
+        context = None
 
-        constraints = IConstrainTypes(addContext, None)
-        if constraints is not None:
-            include = constraints.getImmediatelyAddableTypes()
-            if len(include) < len(allowedTypes):
-                haveMore = True
+        # If this is a default page, also get menu items relative to the parent
+        if isDefaultPage:
+            parent = utils.parent(obj)
+            folder = ISelectableBrowserDefault(parent, None)
 
-        results = factories_view.addable_types(include=include)
+        context = ISelectableBrowserDefault(obj, None)
 
-        if haveMore:
-            url = '%s/folder_factories' % (addContext.absolute_url(),)
-            results.append({ 'title'       : _(u'folder_add_more', default=u'More\u2026'),
-                             'description' : _(u'Show all available content types'),
-                             'action'      : url,
+        fodlerResults = self._getMenuItemsForContext(folder, request)
+        contextResults = self._getMenuItemsForContext(context, request)
+
+        results = []
+        if len(folderResults) > 0 and len(contextResults) > 0:
+            results.append({ 'title'       : _(u'label_current_folder_add', default=u'Add in Folder'),
+                             'description' : '',
+                             'action'      : None,
                              'selected'    : False,
                              'icon'        : None,
-                             'extra'       : {'id': 'more', 'separator': None, 'class': ''},
+                             'extra'       : {'id': 'folderHeader', 'separator': 'actionSeparator', 'class': ''},
                              'submenu'     : None,
-                            })
+                             })
+            results.extend(folderResults)
+            results.append({ 'title'       : _(u'label_current_item_add', default=u'Add in Item'),
+                             'description' : '',
+                             'action'      : None,
+                             'selected'    : False,
+                             'icon'        : None,
+                             'extra'       : {'id': 'contextHeader', 'separator': 'actionSeparator', 'class': ''},
+                             'submenu'     : None,
+                             })
+            results.extend(contextResults)
 
-        constraints = ISelectableConstrainTypes(addContext, None)
-        if constraints is not None:
-            if constraints.canSetConstrainTypes() and constraints.getDefaultAddableTypes():
-                url = '%s/folder_constraintypes_form' % (addContext.absolute_url(),)
-                results.append({'title'       : _(u'folder_add_settings', default=u'Restrictions\u2026'),
-                                'description' : _(u'title_configure_addable_content_types', default=u'Configure which content types can be added here'),
-                                'action'      : url,
-                                'selected'    : False,
-                                'icon'        : None,
-                                'extra'       : {'id': 'settings', 'separator': None, 'class': ''},
-                                'submenu'     : None,
-                                })
+        else:
+            results.extend(folderResults)
+            results.extend(contextResults)
 
         return results
 
