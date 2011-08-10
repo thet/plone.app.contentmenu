@@ -14,14 +14,14 @@ class DisplayViewsMenu(BrowserMenu):
 
     implements(IDisplayViewsMenu)
 
-    def getMenuItemByAction(self, object, request, action):
+    def getMenuItemByAction(self, obj, request, action):
         # Normalize actions; strip view prefix
         if action.startswith('@@'):
             action = action[2:]
         if action.startswith('++view++'):
             action = action[8:]
 
-        for name, item in getAdapters((object, request),
+        for name, item in getAdapters((obj, request),
                                       self.getMenuItemType()):
             item_action = item.action
             # Normalize menu item action; never uses ++view++
