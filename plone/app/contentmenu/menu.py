@@ -603,7 +603,7 @@ class FactoriesMenu(BrowserMenu):
 
         context = ISelectableBrowserDefault(obj, None)
 
-        fodlerResults = self._getMenuItemsForContext(folder, request)
+        folderResults = self._getMenuItemsForContext(folder, request)
         contextResults = self._getMenuItemsForContext(context, request)
 
         results = []
