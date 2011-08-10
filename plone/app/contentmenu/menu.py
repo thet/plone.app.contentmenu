@@ -473,7 +473,7 @@ class FactoriesSubMenuItem(BrowserSubMenuItem):
 class FactoriesMenu(BrowserMenu):
     implements(IFactoriesMenu)
 
-    def _addable_types(self, obj, request, include=None):
+    def _addable_types(self, obj, request, allowed, include):
         """Return menu item entries in a TAL-friendly form.
 
         Pass a list of type ids to 'include' to explicitly allow a list of
@@ -486,8 +486,6 @@ class FactoriesMenu(BrowserMenu):
         portal_url = portal_state.portal_url()
 
         baseUrl = obj.absolute_url()
-
-        allowedTypes = obj.allowedContentTypes()
 
         types_tool = getToolByName(obj, 'portal_types')
 
@@ -504,8 +502,8 @@ class FactoriesMenu(BrowserMenu):
 
         expr_context = createExprContext(
             aq_parent(obj), portal_state.portal(), obj)
-        for t in allowedTypes:
-            typeId = t.getId()
+        for typeObj in allowed:
+            typeId = typeObj.getId()
             if include is None or typeId in include:
                 cssId = idnormalizer.normalize(typeId)
                 cssClass = 'contenttype-%s' % cssId
@@ -518,13 +516,13 @@ class FactoriesMenu(BrowserMenu):
                 if not url:
                     url = '%s/createObject?type_name=%s' % (baseUrl, quote_plus(typeId),)
 
-                icon = t.getIconExprObject()
+                icon = typeObj.getIconExprObject()
                 if icon:
                     icon = icon(expr_context)
 
                 results.append({ 'id'           : typeId,
-                                 'title'        : t.Title(),
-                                 'description'  : t.Description(),
+                                 'title'        : typeObj.Title(),
+                                 'description'  : typeObj.Description(),
                                  'action'       : url,
                                  'selected'     : False,
                                  'icon'         : icon,
@@ -557,7 +555,7 @@ class FactoriesMenu(BrowserMenu):
                 if len(include) < len(allowed):
                     haveMore = True
 
-            results = self._addable_types(context, request, include)
+            results = self._addable_types(context, request, allowed, include)
 
             if haveMore:
                 url = '%s/folder_factories' % (context.absolute_url(),)
@@ -604,7 +602,10 @@ class FactoriesMenu(BrowserMenu):
         context = ISelectableBrowserDefault(obj, None)
 
         folderResults = self._getMenuItemsForContext(folder, request)
-        contextResults = self._getMenuItemsForContext(context, request)
+
+        contextResults = []
+        if isDefaultPage and context_state.is_structural_folder():
+            contextResults = self._getMenuItemsForContext(context, request)
 
         results = []
         if len(folderResults) > 0 and len(contextResults) > 0:
