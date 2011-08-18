@@ -604,7 +604,7 @@ class FactoriesMenu(BrowserMenu):
         folderResults = self._getMenuItemsForContext(folder, request)
 
         contextResults = []
-        if isDefaultPage and context_state.is_structural_folder():
+        if context_state.is_structural_folder():
             contextResults = self._getMenuItemsForContext(context, request)
 
         results = []
