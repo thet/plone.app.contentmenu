@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Unreleased feature
+------------------
+
+- Both item and parent menu are displayed when a default item is set on the
+  parent.
+  [encolpe]
+
 2.0.5 - unreleased
 ------------------
 
