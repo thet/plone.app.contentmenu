@@ -247,19 +247,9 @@ class TestFactoriesMenu(ptc.PloneTestCase):
             self.folder.absolute_url() + '/createObject?type_name=News+Item'
             in [a['action'] for a in actions])
 
-    def testMenuIncludesFactoriesOnNonFolderishContext(self):
+    def testMenuNotIncludesFactoriesOnNonFolderishContext(self):
         actions = self.menu.getMenuItems(self.folder.doc1, self.request)
-        img = None
-        for a in actions:
-            if a['extra']['id'] == 'image':
-                img = a
-                break
-        self.failIf(img is None)
-        action = img['action']
-        url = self.folder.absolute_url()
-        self.failUnless(action.startswith(url))
-        url = self.folder.doc1.absolute_url()
-        self.failIf(action.startswith(url))
+        self.assertEqual(len(actions), 0)
 
     def testNoAddableTypes(self):
         actions = self.menu.getMenuItems(self.portal, self.request)
@@ -320,8 +310,7 @@ class TestFactoriesMenu(ptc.PloneTestCase):
         constraints.setLocallyAllowedTypes(('Document',))
         constraints.setImmediatelyAddableTypes(('Document',))
         actions = self.menu.getMenuItems(self.folder.folder1, self.request)
-        action_ids = [a['extra']['id'] for a in actions]
-        self.failUnless('event' in action_ids)
+        self.assertEqual(len(actions), 0)
 
     def testImgConditionalOnTypeIcon(self):
         """The <img> element should not render if the content type has
