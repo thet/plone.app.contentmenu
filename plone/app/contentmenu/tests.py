@@ -322,6 +322,31 @@ class TestFactoriesMenu(ptc.PloneTestCase):
                 break
         self.failIf(item['icon'])
 
+    def testFolderishDefaultPageShowsContextsMenuItems(self):
+        self.folder.invokeFactory('Folder', 'folder1')
+        constraints = ISelectableConstrainTypes(self.folder.folder1)
+        constraints.setConstrainTypesMode(1)
+        constraints.setLocallyAllowedTypes(('Document',))
+        constraints.setImmediatelyAddableTypes(('Document',))
+        self.folder.setDefaultPage('folder1')
+        actions = self.menu.getMenuItems(self.folder.folder1, self.request)
+        links = [i['action'] for i in actions if i['action']]
+        self.failUnless(("http://nohost/plone/Members/test_user_1_/"
+                       "createObject?type_name=Event") in links)
+        self.failIf(("http://nohost/plone/Members/test_user_1_/folder1/"
+                     "createObject?type_name=Event") in links)
+        self.failUnless(("http://nohost/plone/Members/test_user_1_/folder1/"
+                         "createObject?type_name=Document") in links)
+
+    def testNonFolderishDefaultPageHaveParentsMenuItems(self):
+        self.folder.invokeFactory('Document', 'doc2')
+        self.folder.setDefaultPage('doc2')
+        actions = self.menu.getMenuItems(self.folder, self.request)
+        links = [i['action'] for i in actions if i['action']]
+        self.failUnless(("http://nohost/plone/Members/test_user_1_/"
+                         "createObject?type_name=Event") in links)
+        self.failIf(("http://nohost/plone/Members/test_user_1_/doc2/"
+                     "createObject?type_name=Event") in links)
 
 class TestWorkflowMenu(ptc.PloneTestCase):
 
